@@ -136,12 +136,17 @@
       tl.to({}, { duration: .3 });
     } else {
       var dist = function () { return Math.max(0, track.scrollWidth - window.innerWidth); };
-      tl.to(track, { x: function () { return -dist(); }, duration: 1 });
+      /* card by card: the track rests with a whole card in view, then slides to the next one (never a half-open card) */
+      var x0 = cards[0].offsetLeft;
+      var stop = function (i) { return -Math.min(dist(), cards[i].offsetLeft - x0); };
+      tl.to({}, { duration: .5 });
+      var prev = 0;
       cards.forEach(function (c, i) {
         if (!i) return;
-        var fig = c.querySelector('figure');
-        var at = function () { return Math.max(0, Math.min(.85, (c.offsetLeft - window.innerWidth * .9) / (dist() || 1))); };
-        tl.fromTo(fig, { clipPath: 'inset(0% 0% 0% 100%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: .22, ease: 'power2.out' }, at());
+        if (Math.abs(stop(i) - prev) < 8) return;
+        prev = stop(i);
+        tl.to(track, { x: function () { return stop(i); }, duration: 1, ease: 'power2.inOut' })
+          .to({}, { duration: .5 });
       });
     }
     st = ScrollTrigger.create({
